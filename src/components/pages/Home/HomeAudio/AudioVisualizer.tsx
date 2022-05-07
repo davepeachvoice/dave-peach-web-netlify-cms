@@ -27,8 +27,6 @@ import React, { useRef } from 'react';
 import styles from './styles/AudioVisualizer.module.scss';
 
 const useAnimationFrame = (callback: (deltaTime: number) => void) => {
-  // Use useRef for mutable variables that we want to persist
-  // without triggering a re-render on their change
   const requestRef = React.useRef<number>();
   const previousTimeRef = React.useRef<number>();
 
@@ -51,10 +49,6 @@ interface Props {
   getFrequencyData: (styleAdjuster: StyleAdjuster) => void;
 }
 
-/**
- * @todo make bars disappear when user clicks the pause button (currently they freeze where they
- * are because the animation frame is cancelled right away)
- */
 export default function AudioVisualizer(props: Props) {
   const [frequencyBandArray] = React.useState([...Array(25).keys()]);
   const amplitudeValues = useRef(null);
