@@ -27,49 +27,42 @@ import React from 'react';
 import AudioVisualizer from './AudioVisualizer';
 
 export default function AudioDataContainer() {
-  const frequencyBandArray = [...Array(25).keys()];
-  let audioFile: HTMLAudioElement;
-  let audioData: AnalyserNode;
+  const audioFile = React.useRef<HTMLAudioElement>(undefined);
+  const audioData = React.useRef<AnalyserNode>(undefined);
 
   function initializeAudioAnalyser() {
-    audioFile = new Audio();
+    audioFile.current = new Audio();
 
     const audioContext = new AudioContext();
-    const source = audioContext.createMediaElementSource(audioFile);
-    audioData = audioContext.createAnalyser();
+    const source = audioContext.createMediaElementSource(audioFile.current);
+    audioData.current = audioContext.createAnalyser();
 
-    audioFile.crossOrigin = 'anonymous';
-    audioFile.src =
+    audioFile.current.crossOrigin = 'anonymous';
+    audioFile.current.src =
       'https://res.cloudinary.com/prestocloud/video/upload/v1635110958/dave-peach-web-netlify-cms/commercial-sample_v49stm.mp3';
-    audioData.fftSize = 64;
+    audioData.current.fftSize = 64;
 
     source.connect(audioContext.destination);
-    source.connect(audioData);
+    source.connect(audioData.current);
 
-    audioFile.play();
+    audioFile.current.play();
   }
 
   function pause() {
-    audioFile.pause();
-  }
-
-  function isPlaying() {
-    return audioFile?.duration > 0 && !audioFile.paused;
+    audioFile.current.pause();
   }
 
   function getFrequencyData(styleAdjuster) {
-    const bufferLength = audioData.frequencyBinCount;
+    const bufferLength = audioData.current.frequencyBinCount;
     const amplitudeArray = new Uint8Array(bufferLength);
-    audioData.getByteFrequencyData(amplitudeArray);
+    audioData.current.getByteFrequencyData(amplitudeArray);
     styleAdjuster(amplitudeArray);
   }
 
   return (
     <AudioVisualizer
       initializeAudioAnalyser={initializeAudioAnalyser}
-      frequencyBandArray={frequencyBandArray}
       getFrequencyData={getFrequencyData}
-      isPlaying={isPlaying}
       pause={pause}
     />
   );

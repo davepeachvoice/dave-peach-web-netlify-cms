@@ -1,12 +1,12 @@
-import React from 'react';
 import { Box } from 'grommet';
+import React from 'react';
 import AudioDataContainer from './AudioDataContainer';
 
 const HomeAudio = () => {
   return (
     <>
       <Box>
-        <AudioDataContainer></AudioDataContainer>
+        <AudioDataContainer />
       </Box>
     </>
   );

@@ -66,21 +66,23 @@ const SmallableSpan = styled.span`
   }
 `;
 
+interface Props {
+  getFrequencyData: (styleAdjuster: StyleAdjuster) => void;
+  initializeAudioAnalyser: () => void;
+  pause: () => void;
+}
+
 /**
  * @todo type props
  * @todo make bars disappear when user clicks the pause button (currently they freeze where they
  * are because the animation frame is cancelled right away)
  */
-export default function AudioVisualizer(props) {
-  const {
-    getFrequencyData,
-    initializeAudioAnalyser,
-    pause,
-    frequencyBandArray,
-  } = props;
+export default function AudioVisualizer(props: Props) {
+  const { getFrequencyData, initializeAudioAnalyser, pause } = props;
 
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [animationFrameId, setAnimationFrameId] = React.useState(0);
+  const [frequencyBandArray] = React.useState([...Array(25).keys()]);
 
   const amplitudeValues = useRef(null);
 
@@ -88,7 +90,7 @@ export default function AudioVisualizer(props) {
     function adjustFreqBandStyle(newAmplitudeData) {
       amplitudeValues.current = newAmplitudeData;
       const domElements = frequencyBandArray.map((num) =>
-        document.getElementById(num)
+        document.getElementById(`${num}`)
       );
       for (let i = 0; i < frequencyBandArray.length; i++) {
         const num = frequencyBandArray[i];
@@ -111,7 +113,6 @@ export default function AudioVisualizer(props) {
       cancelAnimationFrame(animationFrameId);
     } else {
       initializeAudioAnalyser();
-
       setIsPlaying(true);
       setAnimationFrameId(requestAnimationFrame(runSpectrumA));
     }
@@ -122,7 +123,7 @@ export default function AudioVisualizer(props) {
       <Stack guidingChild='last'>
         <div className={styles.flexContainer}>
           {frequencyBandArray.map((num) => (
-            <div className={styles.frequencyBands} id={num} key={num} />
+            <div className={styles.frequencyBands} id={`${num}`} key={num} />
           ))}
         </div>
         <Box background={{ color: 'brand', opacity: 'weak' }} height='100%'>
@@ -162,3 +163,5 @@ export default function AudioVisualizer(props) {
     </div>
   );
 }
+
+export type StyleAdjuster = (arr: Uint8Array) => void;
