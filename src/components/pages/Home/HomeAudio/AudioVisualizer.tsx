@@ -23,21 +23,24 @@
 // https://betterprogramming.pub/using-react-ui-components-to-visualize-real-time-spectral-data-of-an-audio-source-17a498a6d8d7
 // https://github.com/matt-eric/web-audio-fft-visualization-with-react-hooks
 
-import React, { useRef } from 'react';
+import React from 'react';
 import styles from './styles/AudioVisualizer.module.scss';
 
 const useAnimationFrame = (callback: (deltaTime: number) => void) => {
   const requestRef = React.useRef<number>();
   const previousTimeRef = React.useRef<number>();
 
-  const animate = (time: number) => {
-    if (previousTimeRef.current !== undefined) {
-      const deltaTime = time - previousTimeRef.current;
-      callback(deltaTime);
-    }
-    previousTimeRef.current = time;
-    requestRef.current = requestAnimationFrame(animate);
-  };
+  const animate = React.useCallback(
+    (time: number) => {
+      if (previousTimeRef.current !== undefined) {
+        const deltaTime = time - previousTimeRef.current;
+        callback(deltaTime);
+      }
+      previousTimeRef.current = time;
+      requestRef.current = requestAnimationFrame(animate);
+    },
+    [callback]
+  );
 
   React.useEffect(() => {
     requestRef.current = requestAnimationFrame(animate);
@@ -51,7 +54,7 @@ interface Props {
 
 export default function AudioVisualizer(props: Props) {
   const [frequencyBandArray] = React.useState([...Array(25).keys()]);
-  const amplitudeValues = useRef(null);
+  const amplitudeValues = React.useRef(null);
 
   useAnimationFrame(() => {
     // Pass on a function to the setter of the state
