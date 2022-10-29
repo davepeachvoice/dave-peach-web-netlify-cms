@@ -23,72 +23,46 @@
 // https://betterprogramming.pub/using-react-ui-components-to-visualize-real-time-spectral-data-of-an-audio-source-17a498a6d8d7
 // https://github.com/matt-eric/web-audio-fft-visualization-with-react-hooks
 
-import { attributes as HomeContentAttributes } from '@content/home.md';
-import { Box, Button, Heading, Stack } from 'grommet';
-import { Microphone, PauseFill } from 'grommet-icons';
-import React, { useCallback, useRef } from 'react';
-import styled from 'styled-components';
+import React from 'react';
 import styles from './styles/AudioVisualizer.module.scss';
 
-const ButtonWithIcon = styled(Button)`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-`;
+const useAnimationFrame = (callback: (deltaTime: number) => void) => {
+  const requestRef = React.useRef<number>();
+  const previousTimeRef = React.useRef<number>();
 
-const TaglineContainer = styled.div`
-  height: 100%;
-  background-color: var(--status-ok);
-  color: white;
-  clip-path: polygon(17% 0, 100% 0, 100% 100%, 0% 100%);
-  width: 300px;
-  display: flex;
-  justify-content: flex-end;
-  cursor: pointer;
-  transition: all 0.3s ease-in-out;
-  &:hover {
-    background-color: #db7f00;
-  }
-`;
+  const animate = React.useCallback(
+    (time: number) => {
+      if (previousTimeRef.current !== undefined) {
+        const deltaTime = time - previousTimeRef.current;
+        callback(deltaTime);
+      }
+      previousTimeRef.current = time;
+      requestRef.current = requestAnimationFrame(animate);
+    },
+    [callback]
+  );
 
-const NewHeading = styled(Heading)`
-  @media screen and (max-width: 400px) {
-    font-size: 12vw;
-    line-height: 13vw;
-  }
-`;
+  React.useEffect(() => {
+    requestRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(requestRef.current);
+  }, [animate]); // Make sure the effect runs only once
+};
 
-const SmallableSpan = styled.span`
-  @media screen and (max-width: 400px) {
-    font-size: 5vw;
-    line-height: 5vw;
-  }
-`;
+interface Props {
+  getFrequencyData: (styleAdjuster: StyleAdjuster) => void;
+}
 
-/**
- * @todo type props
- * @todo make bars disappear when user clicks the pause button (currently they freeze where they
- * are because the animation frame is cancelled right away)
- */
-export default function AudioVisualizer(props) {
-  const {
-    getFrequencyData,
-    initializeAudioAnalyser,
-    pause,
-    frequencyBandArray,
-  } = props;
+export default function AudioVisualizer(props: Props) {
+  const [frequencyBandArray] = React.useState([...Array(25).keys()]);
+  const amplitudeValues = React.useRef(null);
 
-  const [isPlaying, setIsPlaying] = React.useState(false);
-  const [animationFrameId, setAnimationFrameId] = React.useState(0);
-
-  const amplitudeValues = useRef(null);
-
-  const runSpectrumA = useCallback(() => {
+  useAnimationFrame(() => {
+    // Pass on a function to the setter of the state
+    // to make sure we always have the latest state
     function adjustFreqBandStyle(newAmplitudeData) {
       amplitudeValues.current = newAmplitudeData;
       const domElements = frequencyBandArray.map((num) =>
-        document.getElementById(num)
+        document.getElementById(`${num}`)
       );
       for (let i = 0; i < frequencyBandArray.length; i++) {
         const num = frequencyBandArray[i];
@@ -99,66 +73,16 @@ export default function AudioVisualizer(props) {
         domElements[num].style.height = `${percentage}%`;
       }
     }
-
-    getFrequencyData(adjustFreqBandStyle);
-    setAnimationFrameId(requestAnimationFrame(runSpectrumA));
-  }, [getFrequencyData, frequencyBandArray]);
-
-  function toggleAudio() {
-    if (isPlaying) {
-      pause();
-      setIsPlaying(false);
-      cancelAnimationFrame(animationFrameId);
-    } else {
-      initializeAudioAnalyser();
-
-      setIsPlaying(true);
-      setAnimationFrameId(requestAnimationFrame(runSpectrumA));
-    }
-  }
+    props.getFrequencyData(adjustFreqBandStyle);
+  });
 
   return (
-    <div>
-      <Stack guidingChild='last'>
-        <div className={styles.flexContainer}>
-          {frequencyBandArray.map((num) => (
-            <div className={styles.frequencyBands} id={num} key={num} />
-          ))}
-        </div>
-        <Box background={{ color: 'brand', opacity: 'weak' }} height='100%'>
-          <NewHeading level={1} size='large' margin='large' textAlign='center'>
-            {HomeContentAttributes.hero_main_text}
-          </NewHeading>
-        </Box>
-      </Stack>
-      <Box
-        direction='row'
-        justify='between'
-        align='center'
-        height='60px'
-        background={{ color: 'white' }}
-      >
-        <Box style={{ paddingLeft: '20px' }}>
-          <SmallableSpan>{HomeContentAttributes.hero_sub_text}</SmallableSpan>
-        </Box>
-        <TaglineContainer
-          style={{ paddingRight: '20px' }}
-          onClick={toggleAudio}
-        >
-          <ButtonWithIcon>
-            <div style={{ textAlign: 'right' }}>
-              <SmallableSpan>
-                {HomeContentAttributes.audio_sample_text}
-              </SmallableSpan>
-            </div>
-            {isPlaying ? (
-              <PauseFill color='white'></PauseFill>
-            ) : (
-              <Microphone color='white'></Microphone>
-            )}
-          </ButtonWithIcon>
-        </TaglineContainer>
-      </Box>
+    <div className={styles.flexContainer}>
+      {frequencyBandArray.map((num) => (
+        <div className={styles.frequencyBands} id={`${num}`} key={num} />
+      ))}
     </div>
   );
 }
+
+export type StyleAdjuster = (arr: Uint8Array) => void;

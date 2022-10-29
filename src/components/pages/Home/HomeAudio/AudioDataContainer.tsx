@@ -23,54 +23,99 @@
 // https://betterprogramming.pub/using-react-ui-components-to-visualize-real-time-spectral-data-of-an-audio-source-17a498a6d8d7
 // https://github.com/matt-eric/web-audio-fft-visualization-with-react-hooks
 
+import { attributes as HomeContentAttributes } from '@content/home.md';
+import { Box, Button, Heading, Stack } from 'grommet';
+import { Microphone, PauseFill } from 'grommet-icons';
 import React from 'react';
+import styled from 'styled-components';
 import AudioVisualizer from './AudioVisualizer';
 
-export default function AudioDataContainer() {
-  const frequencyBandArray = [...Array(25).keys()];
-  let audioFile: HTMLAudioElement;
-  let audioData: AnalyserNode;
+const SmallableSpan = styled.span`
+  @media screen and (max-width: 400px) {
+    font-size: 5vw;
+    line-height: 5vw;
+  }
+`;
+
+const ButtonWithIcon = styled(Button)`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+`;
+
+const TaglineContainer = styled.div`
+  height: 100%;
+  background-color: var(--status-ok);
+  color: white;
+  clip-path: polygon(17% 0, 100% 0, 100% 100%, 0% 100%);
+  width: 300px;
+  display: flex;
+  justify-content: flex-end;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  &:hover {
+    background-color: #db7f00;
+  }
+`;
+
+const NewHeading = styled(Heading)`
+  @media screen and (max-width: 400px) {
+    font-size: 12vw;
+    line-height: 13vw;
+  }
+`;
+
+interface Props {
+  audioSource: string;
+}
+
+export default function AudioDataContainer(props: Props) {
+  const audioFile = React.useRef<HTMLAudioElement>(undefined);
+  const audioData = React.useRef<AnalyserNode>(undefined);
+  const [isPlaying, setIsPlaying] = React.useState(false);
 
   function initializeAudioAnalyser() {
-    audioFile = new Audio();
+    audioFile.current = new Audio();
 
     const audioContext = new AudioContext();
-    const source = audioContext.createMediaElementSource(audioFile);
-    audioData = audioContext.createAnalyser();
+    const source = audioContext.createMediaElementSource(audioFile.current);
+    audioData.current = audioContext.createAnalyser();
 
-    audioFile.crossOrigin = 'anonymous';
-    audioFile.src =
-      'https://res.cloudinary.com/prestocloud/video/upload/v1635110958/dave-peach-web-netlify-cms/commercial-sample_v49stm.mp3';
-    audioData.fftSize = 64;
+    audioFile.current.crossOrigin = 'anonymous';
+    audioFile.current.src = props.audioSource;
+    audioData.current.fftSize = 64;
 
     source.connect(audioContext.destination);
-    source.connect(audioData);
+    source.connect(audioData.current);
 
-    audioFile.play();
+    audioFile.current.play();
+    setIsPlaying(true);
   }
 
   function pause() {
-    audioFile.pause();
-  }
-
-  function isPlaying() {
-    return audioFile?.duration > 0 && !audioFile.paused;
+    audioFile.current.pause();
+    setIsPlaying(false);
   }
 
   function getFrequencyData(styleAdjuster) {
-    const bufferLength = audioData.frequencyBinCount;
+    const bufferLength = audioData.current.frequencyBinCount;
     const amplitudeArray = new Uint8Array(bufferLength);
-    audioData.getByteFrequencyData(amplitudeArray);
+    audioData.current.getByteFrequencyData(amplitudeArray);
     styleAdjuster(amplitudeArray);
   }
 
+  function toggleAudio() {
+    if (isPlaying) {
+      pause();
+      setIsPlaying(false);
+    } else {
+      initializeAudioAnalyser();
+      setIsPlaying(true);
+    }
+  }
+
   return (
-    <AudioVisualizer
-      initializeAudioAnalyser={initializeAudioAnalyser}
-      frequencyBandArray={frequencyBandArray}
-      getFrequencyData={getFrequencyData}
-      isPlaying={isPlaying}
-      pause={pause}
-    />
+    
   );
 }
