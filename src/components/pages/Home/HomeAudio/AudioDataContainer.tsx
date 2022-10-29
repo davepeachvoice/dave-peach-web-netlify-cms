@@ -66,7 +66,11 @@ const NewHeading = styled(Heading)`
   }
 `;
 
-export default function AudioDataContainer() {
+interface Props {
+  audioSource: string;
+}
+
+export default function AudioDataContainer(props: Props) {
   const audioFile = React.useRef<HTMLAudioElement>(undefined);
   const audioData = React.useRef<AnalyserNode>(undefined);
   const [isPlaying, setIsPlaying] = React.useState(false);
@@ -79,8 +83,7 @@ export default function AudioDataContainer() {
     audioData.current = audioContext.createAnalyser();
 
     audioFile.current.crossOrigin = 'anonymous';
-    audioFile.current.src =
-      'https://res.cloudinary.com/prestocloud/video/upload/v1635110958/dave-peach-web-netlify-cms/commercial-sample_v49stm.mp3';
+    audioFile.current.src = props.audioSource;
     audioData.current.fftSize = 64;
 
     source.connect(audioContext.destination);
@@ -113,50 +116,6 @@ export default function AudioDataContainer() {
   }
 
   return (
-    <>
-      <div>
-        <Stack guidingChild='last'>
-          {isPlaying && <AudioVisualizer getFrequencyData={getFrequencyData} />}
-          <Box background={{ color: 'brand', opacity: 'weak' }} height='100%'>
-            <NewHeading
-              level={1}
-              size='large'
-              margin='large'
-              textAlign='center'
-            >
-              {HomeContentAttributes.hero_main_text}
-            </NewHeading>
-          </Box>
-        </Stack>
-      </div>
-      <Box
-        direction='row'
-        justify='between'
-        align='center'
-        height='60px'
-        background={{ color: 'white' }}
-      >
-        <Box style={{ paddingLeft: '20px' }}>
-          <SmallableSpan>{HomeContentAttributes.hero_sub_text}</SmallableSpan>
-        </Box>
-        <TaglineContainer
-          style={{ paddingRight: '20px' }}
-          onClick={toggleAudio}
-        >
-          <ButtonWithIcon>
-            <div style={{ textAlign: 'right' }}>
-              <SmallableSpan>
-                {HomeContentAttributes.audio_sample_text}
-              </SmallableSpan>
-            </div>
-            {isPlaying ? (
-              <PauseFill color='white'></PauseFill>
-            ) : (
-              <Microphone color='white'></Microphone>
-            )}
-          </ButtonWithIcon>
-        </TaglineContainer>
-      </Box>
-    </>
+    
   );
 }
